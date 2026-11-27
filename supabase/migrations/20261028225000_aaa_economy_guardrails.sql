@@ -276,12 +276,14 @@ BEGIN
         ON CONFLICT(user_id,card_key) DO UPDATE SET quantity=public.user_cards.quantity+1;
     END IF;
   END IF;
+  -- Never promote legacy client-editable progress/completed into trusted progress.
+  -- The first verified event starts from zero; already claimed rows remain untouched.
   -- Update only battle-count missions; event-level stats must come from verified game events.
   UPDATE public.user_missions um SET
     trusted_progress_at=now(),
-    progress=least(dm.target_value,um.progress+CASE WHEN dm.mission_type='play_battles' THEN 1
+    progress=least(dm.target_value,(CASE WHEN um.trusted_progress_at IS NULL THEN 0 ELSE coalesce(um.progress,0) END)+CASE WHEN dm.mission_type='play_battles' THEN 1
       WHEN dm.mission_type='win_battles' AND v_won THEN 1 ELSE 0 END),
-    completed=um.completed OR um.progress+CASE WHEN dm.mission_type='play_battles' THEN 1
+    completed=(CASE WHEN um.trusted_progress_at IS NULL THEN 0 ELSE coalesce(um.progress,0) END)+CASE WHEN dm.mission_type='play_battles' THEN 1
       WHEN dm.mission_type='win_battles' AND v_won THEN 1 ELSE 0 END>=dm.target_value
     FROM public.daily_missions dm
     WHERE um.user_id=p_uid AND um.mission_id=dm.id
