@@ -1,0 +1,5 @@
+# BeastGames — Índice de sessões
+[Board #32](https://github.com/tk6209/beastGames/issues/32) · [Ledger](../AGENT_KYA_SESSION_LEDGER.md) · [Manual](../AGENT_OPERATIONS_HUMAN_GUIDE.md)
+| Sessão | Estado |
+|---|---|
+| [BG-CHATGPT-COORDINATOR--20261127T020800Z--AAA-HANDOVER](BG-CHATGPT-COORDINATOR/BG-CHATGPT-COORDINATOR--20261127T020800Z--AAA-HANDOVER.md) | HANDOFF / OFFLINE |
