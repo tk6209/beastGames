@@ -64,9 +64,13 @@ export default function GameInviteNotification({ userId, onAccept }: Props) {
 
   async function accept() {
     if (!invite) return;
-    await supabase.from("game_invites").update({ status: "accepted" }).eq("id", invite.id);
-    if (invite.session_id) {
-      onAccept(invite.session_id);
+    // Re-check on the server: only a still-pending, unexpired invite can be accepted.
+    const { data: fresh } = await supabase.from("game_invites")
+      .update({ status: "accepted" })
+      .eq("id", invite.id).eq("status", "pending").gt("expires_at", new Date().toISOString())
+      .select("session_id").maybeSingle();
+    if (fresh?.session_id) {
+      onAccept(fresh.session_id);
     }
     setInvite(null);
   }

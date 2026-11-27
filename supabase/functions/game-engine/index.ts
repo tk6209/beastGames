@@ -967,40 +967,10 @@ async function handleAccountAction(sb: any, action: string, uid: string, payload
       else await sb.from("user_inventory").insert({ user_id: uid, item_type: invType, item_key: item.item_key, quantity: 1 });
       return { status: 200, body: { data: { coins: p.coins - item.price_coins } } };
     }
-    case "record_battle_result": {
-      const won = !!payload.won;
-      const coinBase = Math.max(0, Math.min(500, Number(payload.coinBase) || 0));
-      const xpGain = Math.max(0, Math.min(500, Number(payload.xpGain) || 0));
-      const { data: st } = await sb.from("user_stats").select("*").eq("user_id", uid).maybeSingle();
-      const streak = won ? (st?.win_streak || 0) + 1 : 0;
-      const bonus = won && streak >= 2 ? Math.round(coinBase * 0.25 * (streak - 1)) : 0;
-      const statsUpd = {
-        total_wins: (st?.total_wins || 0) + (won ? 1 : 0),
-        total_losses: (st?.total_losses || 0) + (won ? 0 : 1),
-        win_streak: streak,
-        best_streak: Math.max(st?.best_streak || 0, streak),
-      };
-      if (st) await sb.from("user_stats").update(statsUpd).eq("user_id", uid);
-      else await sb.from("user_stats").insert({ user_id: uid, ...statsUpd });
-      const bs = payload.battleStats || {};
-      await sb.from("battle_history").insert({
-        user_id: uid, won, dificuldade: String(payload.dificuldade || "normal"),
-        mode: String(bs.mode || "ia"), monster_used: String(bs.monster_used || bs.monstroId || "desconhecido"),
-        opponent_monster: bs.opponent_monster ?? null, turns: Number(bs.turns) || 0,
-        cards_played: Number(bs.cards_played) || 0, damage_dealt: Number(bs.damage_dealt) || 0,
-      });
-      const prof = await addCoinsXp(sb, uid, coinBase + bonus, xpGain);
-      return { status: 200, body: { data: { coins: coinBase + bonus, streak, profile: prof } } };
-    }
-    case "save_card_drop": {
-      const card = payload.card || {};
-      const key = String(card.id ?? card.key ?? card.nome ?? "").slice(0, 80);
-      if (!key) return { status: 400, body: { error: "Carta inválida" } };
-      const { data: ex } = await sb.from("user_cards").select("id, quantity").eq("user_id", uid).eq("card_key", key).maybeSingle();
-      if (ex) await sb.from("user_cards").update({ quantity: ex.quantity + 1 }).eq("id", ex.id);
-      else await sb.from("user_cards").insert({ user_id: uid, card_key: key, card_data: card, raridade: String(card.raridade || "comum"), quantity: 1 });
-      return { status: 200, body: { data: { ok: true } } };
-    }
+    case "record_battle_result":
+    case "save_card_drop":
+      // Rewards and card drops must come from a server-owned finished session; client-supplied values are never trusted.
+      return { status: 503, body: { error: "Recompensas indisponíveis", code: "ECONOMY_NOT_ACTIVATED" } };
   }
   return { status: 400, body: { error: "Ação desconhecida" } };
 }
@@ -1081,6 +1051,18 @@ Deno.serve(async (req) => {
 
       if (!slotRow || slotRow.slot !== payload.slot) {
         return new Response(JSON.stringify({ error: "Slot inválido para este usuário" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // init_game on an existing session: only an authenticated participant, and only while waiting.
+    if (rawSessionId && action === "init_game") {
+      const { data: me } = await supabase.from("game_players").select("id")
+        .eq("session_id", rawSessionId).eq("user_id", requesterUserId ?? "00000000-0000-0000-0000-000000000000").maybeSingle();
+      const { data: sess } = await supabase.from("game_sessions").select("status").eq("id", rawSessionId).maybeSingle();
+      if (!requesterUserId || !me || !sess || sess.status !== "waiting") {
+        return new Response(JSON.stringify({ error: "Sessão não autorizada" }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
