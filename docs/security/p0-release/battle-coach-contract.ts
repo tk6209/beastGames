@@ -5,7 +5,7 @@ export type CoachReport = { turningPoints: {turn:number; explanation:string; alt
 const object = (v: unknown): v is Record<string,unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const slot = (v: unknown): v is 0|1 => v === 0 || v === 1;
 const integer = (v:unknown,max:number):v is number => typeof v==='number'&&Number.isInteger(v)&&v>=0&&v<=max;
-const pair = (v:unknown,max:number):v is [number,number] => Array.isArray(v)&&v.length===2&&v.every(x=>integer(x,max));
+const pair = (v:unknown,max:number):v is [number,number] => Array.isArray(v)&&v.length===2&&integer(v[0],max)&&integer(v[1],max);
 const actions = ['attack','defend','heal','power','pass','combo'] as const;
 export function parseBattleLog(v:unknown):BattleLog|null {
   if(!object(v)||v.mode!=='multi'||v.completed!==true||!slot(v.playerSlot)||!slot(v.winner)||!Array.isArray(v.turns)||v.turns.length<1||v.turns.length>200)return null;
@@ -18,8 +18,8 @@ export function parseBattleLog(v:unknown):BattleLog|null {
 }
 const bounded = (v:unknown,max:number):v is string => typeof v==='string'&&v.trim().length>0&&v.length<=max;
 export function parseCoachReport(v:unknown,log:BattleLog):CoachReport|null{
-  if(!object(v)||!Array.isArray(v.turningPoints)||v.turningPoints.length<1||v.turningPoints.length>3||!Array.isArray(v.nextMatch)||v.nextMatch.length!==3||!v.nextMatch.every(t=>bounded(t,300)))return null;
-  const known=new Set(log.turns.map(t=>t.turn));const points:CoachReport['turningPoints']=[];
-  for(const p of v.turningPoints){if(!object(p)||typeof p.turn!=='number'||!known.has(p.turn)||!bounded(p.explanation,600)||!bounded(p.alternative,600))return null;points.push({turn:p.turn,explanation:p.explanation,alternative:p.alternative});}
-  return {turningPoints:points,nextMatch:v.nextMatch};
+  if(!object(v)||!Array.isArray(v.turningPoints)||v.turningPoints.length<1||v.turningPoints.length>3||!Array.isArray(v.nextMatch)||v.nextMatch.length!==3||!Array.from(v.nextMatch).every(t=>bounded(t,300)))return null;
+  const known=new Set(log.turns.map(t=>t.turn));const points:CoachReport['turningPoints']=[];const seen=new Set<number>();
+  for(const p of v.turningPoints){if(!object(p)||typeof p.turn!=='number'||!known.has(p.turn)||seen.has(p.turn)||!bounded(p.explanation,600)||!bounded(p.alternative,600))return null;seen.add(p.turn);points.push({turn:p.turn,explanation:p.explanation,alternative:p.alternative});}
+  return {turningPoints:points,nextMatch:[...v.nextMatch]};
 }
