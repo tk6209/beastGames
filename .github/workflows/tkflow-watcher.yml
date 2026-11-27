@@ -1,0 +1,50 @@
+name: BeastGames TKFLOW watcher
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/tkflow-watcher.yml'
+      - 'docs/operations/tkflow-watcher*.cjs'
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  checks: read
+concurrency:
+  group: beastgames-tkflow-watcher
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node --test docs/operations/tkflow-watcher.test.cjs
+      - name: Read-only live reconciliation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BG_PUBLISH: 'false'
+        run: node docs/operations/tkflow-watcher.cjs
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      checks: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Publish changed snapshot only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BG_PUBLISH: 'true'
+        run: node docs/operations/tkflow-watcher.cjs
