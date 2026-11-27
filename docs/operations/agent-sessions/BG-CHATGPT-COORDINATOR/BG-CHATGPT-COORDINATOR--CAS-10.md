@@ -1,0 +1,2 @@
+# BG-02 CAS primitive
+Grant 7208471040. Staged SQL only; session row lock, verified owner slot parameter, active/trust-zero guard, expected version, bounded JSON, monotonic turn, atomic event insert. Server must derive transition from canonical rules and verified JWT; no browser exposure. SQL runtime unverified; concurrency, rollback, ACL and real hosted schema tests required. No activation or economic authority. BG-01 remains prerequisite.
