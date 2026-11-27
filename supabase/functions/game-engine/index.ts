@@ -1071,7 +1071,7 @@ Deno.serve(async (req) => {
         .select("slot").eq("session_id",sessionId).eq("user_id",requesterUserId).maybeSingle();
       const { data: old } = await supabase.from("game_sessions")
         .select("status").eq("id",sessionId).maybeSingle();
-      if (!gp || !old || old.status === "finished") {
+      if (!gp || !old || old.status !== "waiting") {
         return new Response(JSON.stringify({ error: "Sessão não autorizada ou encerrada" }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -1100,6 +1100,8 @@ Deno.serve(async (req) => {
 
     let state: any = {};
     let previousUpdatedAt: string | null = null;
+    let initializingExisting = false;
+    if (action === "init_game" && rawSessionId) initializingExisting = true;
     if (sessionId && action !== "init_game") {
       const { data: session } = await supabase
         .from("game_sessions")
@@ -1149,6 +1151,7 @@ Deno.serve(async (req) => {
         status: result.state.fase === "resultado" ? "finished" : "active",
       }).eq("id", sessionId);
       if (previousUpdatedAt) writing = writing.eq("updated_at", previousUpdatedAt);
+      if (initializingExisting) writing = writing.eq("status", "waiting");
       const { data: savedSession, error: stateError } = await writing.select("id").maybeSingle();
       if (stateError || !savedSession) {
         return new Response(JSON.stringify({ error: "Conflito de estado: atualize a partida" }), {
