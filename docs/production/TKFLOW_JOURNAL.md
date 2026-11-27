@@ -51,3 +51,19 @@ Baseline SHA, RED reproduzido, patch mínimo, testes unitários/integrados/conco
 
 ## Referências locais
 [Ledger](../operations/AGENT_KYA_SESSION_LEDGER.md) · [Manual](../operations/AGENT_OPERATIONS_HUMAN_GUIDE.md) · [Índice](../operations/agent-sessions/README.md) · [Plano original](../AAA_GAME_REBUILD_TKDECOMPOSE.md) · [98 passos PR #29](https://github.com/tk6209/beastGames/blob/01ec99745521b69d5e2827d9e797b444fc4e2c3d/docs/AAA_GITHUB_TKDECOMPOSE_98.md).
+
+## Diretiva permanente do Owner — continuidade canônica (26/11/2026 BRT)
+- **Journal-first / Journal-last:** este arquivo é o índice canônico de continuidade do BeastGames; o [Mission Board #32](https://github.com/tk6209/beastGames/issues/32) é o log operacional de eventos/claims em tempo real, e os journals individuais são as evidências append-only. Juntos formam o Journal; chats, automações, Slack e agentes são executores ou interfaces, jamais substitutos.
+- Toda sessão humana, LLM, CI ou automação deve iniciar reconciliando Journal, Board, ledger, HEAD, leases e evidências; executar somente dentro de escopo/grant; ao encerrar, registrar SHA, testes, decisões, blockers, próximo trabalho atômico e liberar o claim. Nunca reiniciar a missão por falta de contexto de chat.
+- Atualizações futuras devem preservar histórico, escopo exclusivo de BeastGames e links por SHA. Eventos do Board prevalecem para estado operacional mais recente; divergências devem ser explicitadas e reconciliadas antes de escrever. O watcher é advisory, não autoridade para grants, merges, deploy ou revisão independente.
+- Política permanente: sem falso GREEN, sem autoaprovação, sem ativação de P0 ou alterações de produção sem gates e autoridade. Nenhum watcher é ONLINE antes de heartbeat real. Autonomia significa execução comprovada, não apenas cron configurado.
+
+### Snapshot reconciliado nesta sessão
+- PR #34: lockfile corrigido, CI 45927543849 PASS, integração e revisão independente pendentes; main permanece RED.
+- PR #35: telemetria, 196 testes PASS, integração real de join/init e funnel pendentes.
+- PR #36: lint parcial, 283 erros / 24 avisos ainda presentes; PR #37 audit RED, 14 findings runtime (12 high, 2 moderate) e 2 critical dev-inclusive; remediação necessária.
+- PRs #38/#39: criação atômica não recompensável e PostgreSQL sintético PASS, run 45928059051; JWT/RLS real e init canônico pendentes.
+- PR #40: contrato coach candidato, CI a reconciliar; sem ativação.
+- PR #41: watcher CI 45928695198 PASS, validate 45928695187 RED; cron não ativado no default branch, revisão independente e merge pendentes. Executor recorrente bloqueado pelo limite de automações; nenhuma rotina existente alterada.
+- NEXT_ATOMIC_TASK=BG-00 dependency remediation / BG-01 canonical init in disjoint claims; reconcile watcher validate failure separately. RELEASE=HOLD.
+- Owner directive recorded via Board claim 7208213929; grant 7208218233; ACK 7208218771. This is an append-only documentation update in PR #41, not a merge to main.
