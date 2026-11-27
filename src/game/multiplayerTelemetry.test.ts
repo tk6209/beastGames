@@ -29,4 +29,34 @@ describe('multiplayer telemetry', () => {
     await expect(observeMultiplayer('room_join',run,Boolean,async()=>{throw Error('offline');},()=> 'b')).resolves.toBe(true);
     expect(run).toHaveBeenCalledTimes(2);
   });
+  it('preserves gameplay when attempt ID generation fails', async () => {
+    const run = vi.fn(async () => true);
+    const sink = vi.fn();
+    await expect(Promise.resolve().then(() => observeMultiplayer('room_join', run, Boolean, sink, () => { throw Error('no crypto'); }))).resolves.toBe(true);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(sink).not.toHaveBeenCalled();
+  });
+  it('preserves gameplay when clock fails', async () => {
+    const sink = vi.fn();
+    await expect(Promise.resolve().then(() => observeMultiplayer('room_join', async () => true, Boolean, sink, () => 'a', () => { throw Error('clock'); }))).resolves.toBe(true);
+    expect(sink).not.toHaveBeenCalled();
+  });
+  it('does not convert a successful operation into an error when observation fails', async () => {
+    const events: MultiplayerEvent[] = [];
+    await expect(observeMultiplayer('room_join', async () => true, () => { throw Error('observer'); }, e => { events.push(e); }, () => 'a')).resolves.toBe(true);
+    expect(events.map(e => e.event)).toEqual(['room_join_attempt']);
+  });
+  it('explicitly labels all emitted events as client observed', async () => {
+    const events: MultiplayerEvent[] = [];
+    await observeMultiplayer('room_join', async () => true, Boolean, e => { events.push(e); }, () => 'a');
+    expect(events).toHaveLength(2);
+    expect(events.every(e => e.source === 'client_observed')).toBe(true);
+  });
+  it('does not emit invalid timestamps or empty attempt IDs', async () => {
+    const sink = vi.fn();
+    await expect(observeMultiplayer('room_join', async () => true, Boolean, sink, () => '')).resolves.toBe(true);
+    await expect(observeMultiplayer('room_join', async () => true, Boolean, sink, () => 'a', () => NaN)).resolves.toBe(true);
+    expect(sink).not.toHaveBeenCalled();
+  });
+
 });
