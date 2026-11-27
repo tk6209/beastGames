@@ -110,7 +110,7 @@ jobs:
         run: |
           mkdir -p major-evidence
           git rev-parse HEAD > major-evidence/base-sha.txt
-          npm install --package-lock-only --ignore-scripts --save-dev --save-exact vite@8.4.0 vitest@5.1.2 @vitejs/plugin-react-swc@latest > major-evidence/install.log 2>&1
+          npm install --package-lock-only --ignore-scripts --save-dev --save-exact vite@7.3.8 vitest@5.1.2 @vitejs/plugin-react-swc@4.3.3 > major-evidence/install.log 2>&1
           npm install --package-lock-only --ignore-scripts --save-exact zod@4.6.7 >> major-evidence/install.log 2>&1
           set +e
           npm audit fix --package-lock-only --ignore-scripts --json > major-evidence/fix.json
@@ -121,8 +121,7 @@ jobs:
           npm test
           npm run build
       - name: Type checking
-        if: always()
-        run: npx --no-install tsc --noEmit -p tsconfig.app.json
+        run: ./node_modules/.bin/tsc --noEmit -p tsconfig.app.json
       - name: Reaudit full and runtime
         if: always()
         shell: bash
