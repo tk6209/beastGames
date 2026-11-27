@@ -67,3 +67,12 @@ Baseline SHA, RED reproduzido, patch mínimo, testes unitários/integrados/conco
 - PR #41: watcher CI 45928695198 PASS, validate 45928695187 RED; cron não ativado no default branch, revisão independente e merge pendentes. Executor recorrente bloqueado pelo limite de automações; nenhuma rotina existente alterada.
 - NEXT_ATOMIC_TASK=BG-00 dependency remediation / BG-01 canonical init in disjoint claims; reconcile watcher validate failure separately. RELEASE=HOLD.
 - Owner directive recorded via Board claim 7208213929; grant 7208218233; ACK 7208218771. This is an append-only documentation update in PR #41, not a merge to main.
+
+## Diretiva do Owner — contratos mestres de desenvolvimento coordenado (27/11/2026)
+- [Índice e comando de retomada](../operations/prompts/README.md).
+- [MASTER Bootstrap v2.0](../operations/prompts/BEASTGAMES_AGENT_BOOTSTRAP_V2.md): entrada de novos agentes, KYA, discovery, claims, workstreams BG-00..14/BG-OPS, PDCATDD, gates e DoD.
+- [MASTER Continuation v1.0](../operations/prompts/BEASTGAMES_AGENT_CONTINUATION_V1.md): retomada e seleção dinâmica de novas tarefas, lotes de alto valor, recuperação de blockers, integração, handover e condições de parada.
+- Diretiva permanente: TARGET=100_PERCENT; ITERATION_POLICY=MINIMUM_NECESSARY; JOURNAL_FIRST/LAST=TRUE. Não parar por tarefa, commit, PR ou relatório quando houver trabalho autorizado executável. Coordenador serializa grants e integração; agentes executam escopos exclusivos; revisor independente certifica SHA exato. Watcher é advisory e não executor. Sem Lovable agent, sem autoaprovação, sem bypass, sem ativação P0.
+- Novos agentes leem Bootstrap; agentes registrados usam Continuation. Toda alteração dos contratos é versionada e registrada no Journal; manual, ledger e AGENTS.md apontam para as fontes únicas.
+- Evidência operacional mais recente: PR43 build CI PASS (45930543454); PR44/45 validate PASS (45930648547/45930685590), SQL/real JWT e integração pendentes. PR37 candidato major: 0 críticas/altas, 17 moderadas full e 5 runtime; 190/191 testes, falha guest passTurn em p0Release.test.ts:43; build/typecheck não certificados (45930633549). 15 PRs abertas no discovery anterior; não usar snapshot como estado atual. Watcher OFFLINE. RELEASE=HOLD.
+- Sessão MASTER-PROMPTS-V1, grant [7208898867](https://github.com/tk6209/beastGames/issues/32#issuecomment-7208898867). Publicação documental na PR #41; não implica merge, execução recorrente ou mudança de estratégia de produto.

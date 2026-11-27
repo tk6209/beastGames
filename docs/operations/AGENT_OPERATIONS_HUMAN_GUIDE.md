@@ -34,3 +34,10 @@ NEXT_ATOMIC_TASK=<task>
 ```
 ## Cadência
 Agentes efetivamente em execução consultam board ao iniciar e antes de escrever; reavaliam lease a cada ciclo. Se houver runner agendado comprovado, registrar frequência real e heartbeat; nenhuma instrução cria daemon automaticamente. Não publicar spam de status. Coordenador mantém painel por gates, responsáveis e evidências, não percentuais arbitrários.
+
+## Contratos mestres e ciclo de trabalho contínuo
+Use [Bootstrap v2.0](prompts/BEASTGAMES_AGENT_BOOTSTRAP_V2.md) para iniciar agentes e [Continuation v1.0](prompts/BEASTGAMES_AGENT_CONTINUATION_V1.md) para retomar agentes existentes. [Índice/comando curto](prompts/README.md). Os contratos são fonte única; não duplicar em outros manuais.
+
+Owner → coordenador (grants/leases e dependências) → implementadores (paths exclusivos) → revisor independente (SHA/evidência) → integração serial → journal/board → próximo lote. A revisão pode ocorrer sobre PR draft; merge somente após gates. Nenhuma espera por novo comando humano para tarefas dentro de autorização e grant; sem grant, trabalhar read-only ou solicitar outro escopo. Ao concluir ou bloquear, publicar handover, liberar claim e buscar próxima tarefa. Parar apenas ALL_GREEN, ausência de tarefa executável autorizada, limite real de ambiente ou ordem do Owner. Sem daemon implícito.
+
+Eventos complementares: TASK_AVAILABLE, REVIEW_REQUEST, EXECUTION_BATCH_COMPLETED. Incluir o envelope de identidade/tempo/escopo existente quando aplicável. Claims de comentários não são locks transacionais; verificar conflitos e SHA antes de escrever. O painel usa DoD verificável, nunca número de commits como progresso global.
