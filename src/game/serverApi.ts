@@ -57,7 +57,14 @@ export async function initGame(
     demoSessions.set(demoId, result.state);
     return { ...result, sessionId: demoId, rewardEligible: false };
   }
-  // Existing remote init has no verified owner provenance; do not create more unsafe sessions.
+  if (sessionId && modo === 'multi') {
+    // Multiplayer play only: no custom deck/power sent; server refuses rewards.
+    return callEngine("init_game", sessionId, {
+      modo: 'multi',
+      players: players.map(p => ({ slot: p.slot, nome: p.nome, monstroId: p.monstroId })),
+    });
+  }
+  // Other remote init paths have no verified owner provenance; do not create unsafe sessions.
   requireVerifiedEconomy();
 }
 
