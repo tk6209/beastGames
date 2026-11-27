@@ -63,7 +63,11 @@ export async function initGame(
     demoSessions.set(demoId, result.state);
     return { ...result, sessionId: demoId, rewardEligible: false };
   }
-  // Current production is quarantined; staging can validate only the trusted server contract.
+  // Preserve main's multiplayer-only start while economy remains quarantined.
+  if (sessionId && modo === 'multi' && !TRUSTED_ECONOMY_ENABLED) {
+    return callEngine('init_game',sessionId,{modo:'multi',players:players.map(p=>({slot:p.slot,nome:p.nome,monstroId:p.monstroId}))});
+  }
+  // Other remote init paths remain gated until trusted cutover.
   assertEconomyCutover();
   return callEngine('init_game',sessionId,{modo,players,dificuldade,aiMonstroId});
 }
