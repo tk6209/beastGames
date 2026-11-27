@@ -49,3 +49,49 @@ jobs:
           path: audit-evidence/
           if-no-files-found: error
           retention-days: 7
+  remediation-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate compatible candidate and capture evidence
+        shell: bash
+        run: |
+          mkdir -p remediation-evidence
+          set +e
+          npm audit fix --package-lock-only --ignore-scripts --json > remediation-evidence/fix.json
+          fix=$?
+          set -e
+          printf 'fix_exit=%s\n' "$fix" > remediation-evidence/status.txt
+          git diff -- package.json package-lock.json > remediation-evidence/npm.patch
+          cp package-lock.json remediation-evidence/package-lock.json
+          cp package.json remediation-evidence/package.json
+          git rev-parse HEAD > remediation-evidence/base-sha.txt
+          git diff --exit-code -- package.json
+          npm ci --ignore-scripts
+          npm rebuild
+          npm test
+          npm run build
+      - name: Reaudit candidate
+        if: always()
+        shell: bash
+        run: |
+          npm audit --json --audit-level=high > remediation-evidence/post-full.json
+        continue-on-error: false
+      - name: Reaudit runtime
+        if: always()
+        shell: bash
+        run: |
+          npm audit --omit=dev --json --audit-level=high > remediation-evidence/post-runtime.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compatible-remediation-candidate
+          path: remediation-evidence/
+          if-no-files-found: error
+          retention-days: 7
