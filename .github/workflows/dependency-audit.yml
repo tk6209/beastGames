@@ -1,0 +1,51 @@
+name: Dependency audit evidence
+on:
+  pull_request:
+    branches:
+      - fix/bg00-npm-lock-reconcile-20261126
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Collect and validate npm audit evidence
+        shell: bash
+        run: |
+          mkdir -p audit-evidence
+          set +e
+          npm audit --json --audit-level=high > audit-evidence/full.json
+          full=$?
+          npm audit --omit=dev --json --audit-level=high > audit-evidence/runtime.json
+          runtime=$?
+          set -e
+          printf 'full_exit=%s\nruntime_exit=%s\n' "$full" "$runtime" > audit-evidence/status.txt
+          git rev-parse HEAD > audit-evidence/sha.txt
+          node --version >> audit-evidence/status.txt
+          npm --version >> audit-evidence/status.txt
+          node --input-type=module -e '
+            import fs from "node:fs";
+            for (const name of ["full", "runtime"]) {
+              const report = JSON.parse(fs.readFileSync("audit-evidence/" + name + ".json", "utf8"));
+              if (report.error || !report.metadata?.vulnerabilities || !report.vulnerabilities) throw new Error("Invalid audit response: " + name);
+              console.log(name, JSON.stringify(report.metadata.vulnerabilities));
+              for (const [pkg, detail] of Object.entries(report.vulnerabilities)) {
+                if (["critical", "high"].includes(detail.severity)) console.log(pkg, detail.severity, JSON.stringify(detail.fixAvailable));
+              }
+            }'
+          test "$full" -eq 0 && test "$runtime" -eq 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-evidence
+          path: audit-evidence/
+          if-no-files-found: error
+          retention-days: 7
