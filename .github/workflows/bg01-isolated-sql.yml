@@ -1,0 +1,53 @@
+name: BG01 isolated PostgreSQL
+on:
+  pull_request:
+    paths:
+      - 'docs/security/p0-release/002_atomic_ai_session.sql'
+      - 'docs/security/p0-release/tests/atomic_ai_session.sql'
+      - '.github/workflows/bg01-isolated-sql.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-session:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: bg_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d bg_fixture"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Execute SQL against disposable service
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: fixture-only
+          PGDATABASE: bg_fixture
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f docs/security/p0-release/tests/atomic_ai_session.sql
+          set +e
+          for n in 1 2; do
+            (psql -X -v ON_ERROR_STOP=1 -c "SET ROLE service_role; SELECT public.bg_create_waiting_ai_session('00000000-0000-4000-8000-000000000001','RACE1','panther');" > "/tmp/bg-race-$n.log" 2>&1) &
+            if [ "$n" = 1 ]; then a=$!; else b=$!; fi
+          done
+          wait "$a"; ra=$?
+          wait "$b"; rb=$?
+          set -e
+          cat /tmp/bg-race-{1,2}.log
+          if [ "$ra" = 0 ] && [ "$rb" = 0 ]; then exit 1; fi
+          if [ "$ra" != 0 ] && [ "$rb" != 0 ]; then exit 1; fi
+          psql -X -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF (SELECT count(*) FROM public.game_sessions WHERE join_code='RACE1') <> 1 OR (SELECT count(*) FROM public.game_players p JOIN public.game_sessions s ON s.id=p.session_id WHERE s.join_code='RACE1') <> 1 THEN RAISE EXCEPTION 'race failed'; END IF; END \$\$;"
+          echo 'PASS: concurrent duplicate code leaves exactly one session-owner pair'
