@@ -95,3 +95,51 @@ jobs:
           path: remediation-evidence/
           if-no-files-found: error
           retention-days: 7
+  major-remediation-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate explicit major upgrade candidate
+        shell: bash
+        run: |
+          mkdir -p major-evidence
+          git rev-parse HEAD > major-evidence/base-sha.txt
+          npm install --package-lock-only --ignore-scripts --save-dev --save-exact vite@8.4.0 vitest@5.1.2 @vitejs/plugin-react-swc@latest > major-evidence/install.log 2>&1
+          npm install --package-lock-only --ignore-scripts --save-exact zod@4.6.7 >> major-evidence/install.log 2>&1
+          set +e
+          npm audit fix --package-lock-only --ignore-scripts --json > major-evidence/fix.json
+          set -e
+          git diff -- package.json package-lock.json > major-evidence/npm.patch
+          cp package.json package-lock.json major-evidence/
+          npm ci
+          npm test
+          npm run build
+      - name: Type checking
+        if: always()
+        run: npx --no-install tsc --noEmit -p tsconfig.app.json
+      - name: Reaudit full and runtime
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          npm audit --json --audit-level=high > major-evidence/full.json
+          full=$?
+          npm audit --omit=dev --json --audit-level=high > major-evidence/runtime.json
+          runtime=$?
+          set -e
+          printf 'full=%s\nruntime=%s\n' "$full" "$runtime" > major-evidence/status.txt
+          node -e 'for(const name of ["full","runtime"]){const r=require("./major-evidence/"+name+".json");if(!r.metadata?.vulnerabilities||r.error)process.exit(1);console.log(name,r.metadata.vulnerabilities);for(const [k,v] of Object.entries(r.vulnerabilities))if(["critical","high"].includes(v.severity))console.log(k,v.severity,v.fixAvailable)}'
+          test "$full" -eq 0 && test "$runtime" -eq 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: major-remediation-candidate
+          path: major-evidence/
+          if-no-files-found: error
+          retention-days: 7
