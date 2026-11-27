@@ -13,7 +13,9 @@ function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!ctx) {
     try {
-      ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextCtor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextCtor) return null;
+      ctx = new AudioContextCtor();
     } catch { return null; }
   }
   if (ctx.state === "suspended") ctx.resume();
