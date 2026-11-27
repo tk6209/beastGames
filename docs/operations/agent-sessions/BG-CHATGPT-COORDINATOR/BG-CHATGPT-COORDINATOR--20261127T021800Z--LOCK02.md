@@ -1,0 +1,7 @@
+# BG-CHATGPT-COORDINATOR--20261127T021800Z--LOCK02
+PROJECT=BEASTGAMES; MISSION_ID=BG-AAA-CLOSURE-20261126; AGENT_ID=BG-CHATGPT-COORDINATOR; KYA_STATE=SELF_DECLARED; WATCHER=OFFLINE. Parent B7C2. Main c414bee5812f7c447d8a572c7b0a9e4b05a36100; product base PR #29 head 01ec99745521b69d5e2827d9e797b444fc4e2c3d.
+JOIN 7208001868; CLAIM 7208002366; GRANT 7208002934; ACK 7208003334. Product scope package-lock.json only.
+RED: local git ls-remote failed DNS again. Remote npm ci EUSAGE; manifest and Bun have Drizzle/Postgres, npm lock root lacks them.
+CHANGE: reconstructed candidate using committed Bun versions and integrity, nested esbuild dependency trees and optional platform metadata. Preserved all existing package versions; 598→686 entries (+88), root manifest devDependencies match; static reference check on added dependency subgraph found no missing package paths. This is not npm-generated and static check does not prove npm install behavior. No CI waiver.
+Evidence: [commit 61e9030](https://github.com/tk6209/beastGames/commit/61e9030fdd7814af4d60f0703dd876476d1ad046), [draft PR #34](https://github.com/tk6209/beastGames/pull/34) targets PR #29 branch, [CI run 45927543849](https://github.com/tk6209/beastGames/actions/runs/45927543849) in progress at observation. Independent review pending; no merge/deploy. No workers launched. No production/database change.
+NEXT: inspect CI result, fix if RED, independent review before integration. Release HOLD.
