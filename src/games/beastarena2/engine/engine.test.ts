@@ -151,7 +151,7 @@ describe("motor", () => {
     const [s1, c] = comCarta(s, "garra");
     const r = step(s1, { type: "jogar", uid: c.uid });
     expect(r.state.vencedor).toBe("player");
-    expect(r.events.at(-1)).toEqual({ e: "ko", side: "enemy" });
+    expect(r.events[r.events.length - 1]).toEqual({ e: "ko", side: "enemy" });
     expect(step(r.state, { type: "passar" }).events).toEqual([]);
   });
 

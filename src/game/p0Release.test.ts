@@ -34,12 +34,26 @@ describe('P0 unactivated server boundary', () => {
     }
   });
   it('preserves a guest AI round with no remote request and non-eligible session', async () => {
-    const result=await initGame(null,'ai',[{slot:0,nome:'Guest',monstroId:'panther',powerLevel:500}],'medio');
-    expect(result.sessionId).toMatch(/^demo:/);
-    expect(result.rewardEligible).toBe(false);
-    const powered=await choosePower(result.sessionId,0,'fogo');
-    expect(powered.state.players).toHaveLength(2);
-    const turn=await passTurn(result.sessionId,0);
-    expect(turn.state.turno).toBeGreaterThanOrEqual(1);
+    // Fixed opponent and RNG: the first round must be nonlethal.
+    // A random Volt/critical attack can legitimately end a battle before advancing.
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0);
+    const remote = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Unexpected remote request'));
+    try {
+      const result=await initGame(null,'ai',[{slot:0,nome:'Guest',monstroId:'panther',powerLevel:500}],'medio','banana');
+      expect(result.sessionId).toMatch(/^demo:/);
+      expect(result.rewardEligible).toBe(false);
+      const powered=await choosePower(result.sessionId,0,'fogo');
+      expect(powered.state.players).toHaveLength(2);
+      expect(powered.state.players[0].powerLevel).toBe(1);
+      const turn=await passTurn(result.sessionId,0);
+      expect(turn.state.fase).toBe('acao');
+      expect(turn.state.turno).toBeGreaterThanOrEqual(1);
+      expect(turn.events).toContainEqual(expect.objectContaining({type:'new_turn',turno:1}));
+      expect(turn.events).not.toContainEqual(expect.objectContaining({type:'card_drop'}));
+      expect(remote).not.toHaveBeenCalled();
+    } finally {
+      remote.mockRestore();
+      random.mockRestore();
+    }
   });
 });
